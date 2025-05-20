@@ -43,8 +43,14 @@ POST /generate
 curl -X POST "http://localhost:8000/generate" \
   -F "images=@image1.jpg" \
   -F "images=@image2.jpg" \
+  -F "images=@image3.jpg" \
+  -F "images=@image4.jpg" \
+  -F "images=@image5.jpg" \
   -F "audios=@audio1.m4a" \
   -F "audios=@audio2.m4a" \
+  -F "audios=@audio3.m4a" \
+  -F "audios=@audio4.m4a" \
+  -F "audios=@audio5.m4a" \
   -F "preview_mode=true" \
   --output video.mp4
 ```

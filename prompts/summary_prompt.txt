@@ -1,0 +1,37 @@
+Create **only** a valid JSON object—nothing else—in the exact format shown below (do **not** wrap it in Markdown).
+All content (summary, titles, voice-overs) **must be in Italian**.
+
+{
+"summary": "<Una sola frase chiara (max 25 parole) che riassume la notizia>",
+"slides": [
+{
+"title": "<6-10 parole italiane, senza punteggiatura finale, prima lettera maiuscola>",
+"voiceOver": "<15-28 parole, tono colloquiale ma curato, tempo presente, durata ≈5-10 s>",
+"imgPrompt": "<illustrazione anime giapponese dettagliata, cel-shading, line art sottile, palette colori vividi ma naturali, illuminazione cinematografica soft rim light; soggetto specifico con nome completo/titolo corretto, contesto, mood, tipo di luce; formato verticale per social media>"
+},
+{
+"title": "<Titolo slide 2>",
+"voiceOver": "<Voice-over slide 2>",
+"imgPrompt": "<illustrazione anime giapponese dettagliata, cel-shading, line art sottile, palette colori vividi ma naturali, illuminazione cinematografica soft rim light; soggetto specifico con nome completo/titolo corretto, contesto, mood, tipo di luce; formato verticale per social media>"
+},
+{
+"title": "<Titolo slide 3>",
+"voiceOver": "<Voice-over slide 3>",
+"imgPrompt": "<illustrazione anime giapponese dettagliata, cel-shading, line art sottile, palette colori vividi ma naturali, illuminazione cinematografica soft rim light; soggetto specifico con nome completo/titolo corretto, contesto, mood, tipo di luce; formato verticale per social media>"
+},
+{
+"title": "<Titolo slide 4>",
+"voiceOver": "<Voice-over slide 4>",
+"imgPrompt": "<illustrazione anime giapponese dettagliata, cel-shading, line art sottile, palette colori vividi ma naturali, illuminazione cinematografica soft rim light; soggetto specifico con nome completo/titolo corretto, contesto, mood, tipo di luce; formato verticale per social media>"
+},
+{
+"title": "<Titolo slide 5>",
+"voiceOver": "<Voice-over slide 5>",
+"imgPrompt": "<illustrazione anime giapponese dettagliata, cel-shading, line art sottile, palette colori vividi ma naturali, illuminazione cinematografica soft rim light; soggetto specifico con nome completo/titolo corretto, contesto, mood, tipo di luce; formato verticale per social media>"
+}
+]
+}
+
+Basandoti sull'articolo fornito, crea un riassunto preciso in italiano e 5 slide. Per ogni slide, cattura un aspetto distinto dell'articolo. Assicurati che il contenuto sia in italiano corrente, includendo accuratamente tutti i nomi propri, titoli e riferimenti presenti nell'articolo. Ogni voiceover deve durare circa 5-10 secondi quando letto ad alta voce.
+
+I prompt per le immagini devono seguire specificamente lo stile richiesto (anime giapponese) e devono essere specifici per il contenuto di quella slide, includendo esplicitamente persone, luoghi, oggetti e concetti chiave menzionati. Assicurati che ogni soggetto sia descritto con dettagli specifici, non generici.

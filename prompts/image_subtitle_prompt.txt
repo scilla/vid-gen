@@ -1,0 +1,1 @@
+Add white subtitles with black border: "{title}". The subtitles should be well inside the picture frame and should use consistent font and size. Put in the 3/4upper of image with wide margins on the sides as well.

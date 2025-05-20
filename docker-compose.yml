@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  vid-gen-app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./temp:/app/temp
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - RAPIDAPI_KEY=${RAPIDAPI_KEY}
+    restart: unless-stopped

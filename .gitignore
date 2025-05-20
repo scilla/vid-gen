@@ -56,3 +56,5 @@ Thumbs.db
 *.jpg
 *.mp4
 *.m4a
+cache/
+test_assets/

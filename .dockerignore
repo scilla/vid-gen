@@ -1,0 +1,45 @@
+# Git
+.git
+.gitignore
+
+# Environment variables
+.env
+*.env
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Development tools
+.vscode/
+.idea/
+
+# Generated videos, images and temp files
+*.mp4
+*.jpg
+*.png
+temp/
+*.mp3
+*.wav
+
+# Logs
+*.log
+logs/
+
+# Docker files
+.dockerignore
+Dockerfile
+
+# Node modules (if any)
+node_modules/

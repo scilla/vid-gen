@@ -1,8 +1,11 @@
-#!/usr/bin/env python3.13
+#!/usr/bin/env python3
 import sys
 import os
-
+import platform
+import multiprocessing
 import shutil
+
+# Import moviepy components
 from moviepy import (
 	ImageClip,
 	AudioFileClip,
@@ -12,9 +15,21 @@ from moviepy import (
 	CompositeAudioClip,
 )
 
+# Ensure ffmpeg is available
+import moviepy.config as conf
+conf.FFMPEG_BINARY = 'ffmpeg'  # Set ffmpeg path directly
+
+
 if shutil.which("ffmpeg") is None:
 	sys.stderr.write("Error: FFmpeg not found. Please install FFmpeg.\n")
 	sys.exit(1)
+
+# Detect system for hardware-specific optimizations
+is_apple_silicon = platform.system() == 'Darwin' and platform.machine().startswith('arm')
+
+# Determine optimal number of processes based on CPU cores
+CPU_COUNT = multiprocessing.cpu_count()
+PROCESSES = max(2, int(CPU_COUNT * 0.75))  # Use 75% of available cores by default
 
 # Configuration (hard-coded)
 PREVIEW = True  # Set to True for low-res previews, False for final output
@@ -32,7 +47,7 @@ PREVIEW_RESOLUTION = (360, 640)  # lower resolution for preview
 RESOLUTION = PREVIEW_RESOLUTION if PREVIEW else FULL_RESOLUTION
 
 FPS = 30
-TRANSITION_DURATION = 0.5  # seconds
+TRANSITION_DURATION = 0.15  # seconds
 
 def load_slides():
 	"""
@@ -167,22 +182,44 @@ def assemble_video(slide_defs):
 		sys.stderr.write(f"Warning: varying audio sample rates {srates}, using {max(srates)} Hz\n")
 	audio_fps = max(srates) if srates else 44100
 	
-	# Write final video
+	# Optimize codec and parameters for Apple Silicon if detected
+	ffmpeg_params = []
+	
+	if is_apple_silicon:
+		# For Apple Silicon: Use simpler optimization approach
+		# Just use optimized settings without hardware acceleration
+		ffmpeg_params = [
+			"-movflags", "+faststart",  # Optimize for web streaming
+			"-vf", f"scale={RESOLUTION[0]}:{RESOLUTION[1]}",  # Match resolution
+			"-pix_fmt", "yuv420p"  # Standard pixel format for compatibility
+		]
+		# Use standard x264 codec but with higher quality/speed settings
+		video_codec = "libx264"
+	else:
+		# For other platforms: Use standard settings
+		ffmpeg_params = ["-movflags", "+faststart"]
+		video_codec = "libx264"
+	
+	# Write final video with optimizations
 	final_video.write_videofile(
 		OUTPUT_FILENAME,
 		fps=FPS,
-		codec="libx264",
+		codec=video_codec,
 		audio_codec="aac",
 		audio_fps=audio_fps,
 		temp_audiofile="temp-audio.m4a",
 		remove_temp=True,
-		ffmpeg_params=["-movflags", "+faststart"]
+		threads=PROCESSES,  # Use optimal thread count
+		bitrate="5000k" if RESOLUTION[1] >= 1080 else "2500k",  # Adaptive bitrate
+		ffmpeg_params=ffmpeg_params
 	)
 
 def main():
 	slide_defs = load_slides()
 	try:
-		print(f"Generating video {'in PREVIEW mode' if PREVIEW else 'in FULL QUALITY'} at {RESOLUTION[0]}x{RESOLUTION[1]}")
+		optimization_info = "with performance optimization" if is_apple_silicon else ""
+		print(f"Generating video {'in PREVIEW mode' if PREVIEW else 'in FULL QUALITY'} "
+		      f"at {RESOLUTION[0]}x{RESOLUTION[1]} using {PROCESSES} threads {optimization_info}")
 		assemble_video(slide_defs)
 	except Exception as e:
 		sys.stderr.write(f"Error: {e}\n")

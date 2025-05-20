@@ -1,17 +1,22 @@
 #!/usr/bin/env python3
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Body
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List
+from typing import List, Dict, Any
+from pydantic import BaseModel
 import uvicorn
 import os
+from pyngrok import ngrok
 import shutil
 from pathlib import Path
-import logging
 import uuid
+import base64
+from io import BytesIO
+import logging
 
-# Import generator functions
+# Import generator functions and logging config
 from generator import assemble_video, FULL_RESOLUTION, PREVIEW_RESOLUTION, FPS, TRANSITION_DURATION
+from log_config import setup_colored_logging
 
 app = FastAPI(title="Video Generator API")
 
@@ -24,9 +29,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Configure colored logging
+setup_colored_logging(level=logging.INFO)
+logger = logging.getLogger('main')
 
 # Create directories for files
 UPLOAD_DIR = Path("uploads")
@@ -34,12 +39,70 @@ OUTPUT_DIR = Path("outputs")
 UPLOAD_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
 
+class Base64Media(BaseModel):
+    filename: str
+    data: str  # base64 encoded data
+
+class GenerateVideoRequest(BaseModel):
+    images: List[Base64Media]
+    audios: List[Base64Media]
+    preview_mode: bool = True
+
 @app.post("/generate")
 async def generate_video(
     images: List[UploadFile] = File(...),
     audios: List[UploadFile] = File(...),
     preview_mode: bool = Form(True)
 ):
+    """
+    Generate a video from the provided images and audio files and return the video file directly.
+    - images: List of image files
+    - audios: List of audio files (must match number of images)
+    - preview_mode: Whether to use preview resolution (faster) or full resolution
+    """
+    return await process_video_generation(images, audios, preview_mode)
+
+@app.post("/generate-base64")
+async def generate_video_base64(request: GenerateVideoRequest):
+    """
+    Generate a video from base64 encoded images and audio data and return the video file directly.
+    - images: List of base64 encoded image data with filenames
+    - audios: List of base64 encoded audio data with filenames
+    - preview_mode: Whether to use preview resolution (faster) or full resolution
+    """
+    try:
+        # Create temporary file-like objects from base64 data
+        temp_images = []
+        temp_audios = []
+        
+        for img in request.images:
+            # Create UploadFile-like object with BytesIO
+            binary_data = base64.b64decode(img.data)
+            temp_img = UploadFile(file=img.filename)
+            temp_img.file = BytesIO(binary_data)
+            temp_images.append(temp_img)
+            
+        for audio in request.audios:
+            # Create UploadFile-like object with BytesIO
+            binary_data = base64.b64decode(audio.data)
+            temp_audio = UploadFile(file=audio.filename)
+            temp_audio.file = BytesIO(binary_data)
+            temp_audios.append(temp_audio)
+        
+        # Use the same processing function as the regular endpoint
+        return await process_video_generation(temp_images, temp_audios, request.preview_mode)
+        
+    except Exception as e:
+        logger.error(f"Error processing base64 data: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "error",
+                "message": str(e)
+            }
+        )
+
+async def process_video_generation(images, audios, preview_mode):
     """
     Generate a video from the provided images and audio files and return the video file directly.
     - images: List of image files
@@ -70,6 +133,8 @@ async def generate_video(
             image_filename = f"{job_id}_{i}_{image.filename}"
             image_path = image_subdir / image_filename
             
+            # Reset file pointer if it's been read before
+            image.file.seek(0)
             with open(image_path, "wb") as buffer:
                 shutil.copyfileobj(image.file, buffer)
             
@@ -79,6 +144,8 @@ async def generate_video(
             audio_filename = f"{job_id}_{i}_{audio.filename}"
             audio_path = audio_subdir / audio_filename
             
+            # Reset file pointer if it's been read before
+            audio.file.seek(0)
             with open(audio_path, "wb") as buffer:
                 shutil.copyfileobj(audio.file, buffer)
             
@@ -156,4 +223,11 @@ async def generate_video(
         )
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    # Open a ngrok tunnel to the HTTP server
+    port = 8000
+    public_url = ngrok.connect(port).public_url
+    print(f"ngrok tunnel opened at {public_url} -> http://localhost:{port}")
+    print("To access your API directly: " + public_url + "/generate-base64")
+    
+    # Start the FastAPI application
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
